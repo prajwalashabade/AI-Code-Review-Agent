@@ -1,0 +1,2486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>AI Code Review Agent</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+            min-height: 100vh;
+        }
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        header {
+            background: linear-gradient(
+                135deg,
+                #172554,
+                #2563eb
+            );
+
+            color: white;
+            padding: 28px 7%;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+
+            background: rgba(255,255,255,0.15);
+
+            border-radius: 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 25px;
+        }
+
+        .brand h1 {
+            font-size: 25px;
+        }
+
+        .brand p {
+            margin-top: 5px;
+            opacity: 0.8;
+            font-size: 13px;
+        }
+
+        .architecture-badge {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+
+            padding: 10px 16px;
+            border-radius: 30px;
+
+            font-size: 13px;
+        }
+
+
+        /* =====================================================
+           MAIN CONTAINER
+        ===================================================== */
+
+        .container {
+            width: 86%;
+            max-width: 1400px;
+
+            margin: 35px auto 60px;
+        }
+
+
+        /* =====================================================
+           CODE INPUT CARD
+        ===================================================== */
+
+        .card {
+            background: white;
+
+            border-radius: 18px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 8px 30px rgba(15,23,42,0.07);
+
+            border: 1px solid #e5eaf2;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 18px;
+        }
+
+        .section-title h2 {
+            font-size: 20px;
+        }
+
+        .section-title span {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+
+        /* =====================================================
+           CONTROLS
+        ===================================================== */
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 12px 15px;
+
+            border: 1px solid #d8dee9;
+
+            border-radius: 10px;
+
+            background: white;
+
+            font-size: 14px;
+
+            outline: none;
+
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: #2563eb;
+        }
+
+
+        /* =====================================================
+           CODE EDITOR
+        ===================================================== */
+
+        textarea {
+            width: 100%;
+
+            min-height: 300px;
+
+            resize: vertical;
+
+            border: 1px solid #d8dee9;
+
+            border-radius: 12px;
+
+            padding: 18px;
+
+            font-family:
+                "Consolas",
+                "Courier New",
+                monospace;
+
+            font-size: 14px;
+
+            line-height: 1.6;
+
+            background: #0f172a;
+
+            color: #e2e8f0;
+
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px rgba(37,99,235,0.12);
+        }
+
+
+        /* =====================================================
+           BUTTONS
+        ===================================================== */
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+
+            margin-top: 18px;
+
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 13px 20px;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .analyze-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .analyze-btn:hover {
+            background: #1d4ed8;
+
+            transform: translateY(-1px);
+        }
+
+        .clear-btn {
+            background: #eef2f7;
+            color: #334155;
+        }
+
+        .clear-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .download-btn {
+            background: #0f766e;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #115e59;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
+        /* =====================================================
+           LOADING
+        ===================================================== */
+
+        #loading {
+            display: none;
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+            font-size: 14px;
+
+            text-align: center;
+        }
+
+        .loader {
+            display: inline-block;
+
+            width: 16px;
+            height: 16px;
+
+            border: 3px solid #bfdbfe;
+
+            border-top-color: #2563eb;
+
+            border-radius: 50%;
+
+            animation: spin 0.8s linear infinite;
+
+            vertical-align: middle;
+
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+
+        /* =====================================================
+           RESULTS
+        ===================================================== */
+
+        #results {
+            display: none;
+
+            margin-top: 30px;
+        }
+
+
+        /* =====================================================
+           SCORE CARDS
+        ===================================================== */
+
+        .stats-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 18px;
+
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+
+            border-radius: 16px;
+
+            padding: 22px;
+
+            border: 1px solid #e5eaf2;
+
+            box-shadow:
+                0 7px 25px rgba(15,23,42,0.06);
+        }
+
+        .stat-label {
+            color: #64748b;
+
+            font-size: 13px;
+
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+
+            font-weight: 700;
+        }
+
+        .score-good {
+            color: #16a34a;
+        }
+
+        .score-medium {
+            color: #d97706;
+        }
+
+        .score-danger {
+            color: #dc2626;
+        }
+
+        .risk-badge {
+            display: inline-block;
+
+            margin-top: 7px;
+
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }
+
+        .risk-low {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .risk-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-high,
+        .risk-critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+
+        /* =====================================================
+           AGENT CARDS
+        ===================================================== */
+
+        .agent-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 16px;
+
+            margin-bottom: 25px;
+        }
+
+        .agent-card {
+            background: white;
+
+            padding: 20px;
+
+            border-radius: 15px;
+
+            border: 1px solid #e5eaf2;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 10px 25px rgba(15,23,42,0.08);
+        }
+
+        .agent-icon {
+            font-size: 27px;
+
+            margin-bottom: 10px;
+        }
+
+        .agent-card h3 {
+            font-size: 15px;
+
+            margin-bottom: 7px;
+        }
+
+        .agent-count {
+            font-size: 25px;
+
+            font-weight: 700;
+
+            color: #2563eb;
+        }
+
+        .agent-card p {
+            color: #64748b;
+
+            font-size: 12px;
+
+            margin-top: 4px;
+        }
+
+
+        /* =====================================================
+           FINDINGS SECTION
+        ===================================================== */
+
+        .results-card {
+            background: white;
+
+            border-radius: 18px;
+
+            border: 1px solid #e5eaf2;
+
+            overflow: hidden;
+
+            margin-bottom: 25px;
+        }
+
+        .results-header {
+            padding: 22px 25px;
+
+            border-bottom: 1px solid #e5eaf2;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+        }
+
+        .results-header h2 {
+            font-size: 19px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 12px;
+
+            background: #f1f5f9;
+
+            color: #475569;
+
+            font-size: 12px;
+
+            border-radius: 8px;
+        }
+
+        .filter-btn.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        #findings-container {
+            padding: 20px 25px;
+        }
+
+
+        /* =====================================================
+           FINDING
+        ===================================================== */
+
+        .finding {
+            border: 1px solid #e2e8f0;
+
+            border-radius: 13px;
+
+            padding: 18px;
+
+            margin-bottom: 14px;
+
+            background: #ffffff;
+        }
+
+        .finding:last-child {
+            margin-bottom: 0;
+        }
+
+        .finding-top {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            gap: 12px;
+
+            margin-bottom: 12px;
+        }
+
+        .finding-title {
+            font-size: 16px;
+
+            font-weight: 700;
+        }
+
+        .badges {
+            display: flex;
+
+            gap: 7px;
+
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 5px 9px;
+
+            border-radius: 7px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+        .critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .high {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .low {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .finding-description {
+            color: #475569;
+
+            line-height: 1.6;
+
+            font-size: 14px;
+
+            margin-bottom: 12px;
+        }
+
+        .recommendation {
+            background: #eff6ff;
+
+            border-left: 4px solid #2563eb;
+
+            padding: 12px;
+
+            border-radius: 7px;
+
+            font-size: 13px;
+
+            color: #1e40af;
+        }
+
+
+        /* =====================================================
+           AGENT SUMMARY
+        ===================================================== */
+
+        .summary-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 15px;
+
+            padding: 20px 25px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+
+            padding: 17px;
+
+            border-radius: 12px;
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+
+            margin-bottom: 8px;
+        }
+
+        .summary-card p {
+            color: #64748b;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+
+        /* =====================================================
+           ERROR
+        ===================================================== */
+
+        #error {
+            display: none;
+
+            margin-top: 20px;
+
+            background: #fee2e2;
+
+            color: #991b1b;
+
+            border: 1px solid #fecaca;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           EMPTY FINDINGS
+        ===================================================== */
+
+        .empty {
+            text-align: center;
+
+            padding: 40px 20px;
+
+            color: #64748b;
+        }
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        footer {
+            text-align: center;
+
+            padding: 25px;
+
+            color: #64748b;
+
+            font-size: 12px;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 1000px) {
+
+            .agent-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+        }
+
+        @media (max-width: 750px) {
+
+            header {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .agent-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            textarea {
+                min-height: 250px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header>
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            🤖
+        </div>
+
+        <div>
+
+            <h1>
+                AI Code Review Agent
+            </h1>
+
+            <p>
+                Intelligent Multi-Agent Source Code Analysis
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="architecture-badge">
+
+        ⚡ LangGraph + Gemini
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
+<main class="container">
+
+
+    <!-- =====================================================
+         CODE INPUT
+    ====================================================== -->
+
+    <section class="card">
+
+        <div class="section-title">
+
+            <h2>
+                🔍 Analyze Your Code
+            </h2>
+
+            <span>
+                AI-powered code analysis
+            </span>
+
+        </div>
+
+
+        <div class="controls">
+
+            <select id="language">
+
+                <option value="Java">
+                    Java
+                </option>
+
+                <option value="Python">
+                    Python
+                </option>
+
+                <option value="JavaScript">
+                    JavaScript
+                </option>
+
+                <option value="C++">
+                    C++
+                </option>
+
+                <option value="C#">
+                    C#
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <textarea
+            id="code"
+            placeholder="Paste your source code here...
+
+Example:
+
+public class Test {
+
+    public static void main(String[] args) {
+
+        int[] numbers = {10, 20, 30};
+
+        for (int i = 0; i <= numbers.length; i++) {
+            System.out.println(numbers[i]);
+        }
+    }
+}"
+        ></textarea>
+
+
+        <div class="button-row">
+
+            <button
+                class="analyze-btn"
+                id="analyzeBtn"
+                onclick="analyzeCode()"
+            >
+                🔍 Analyze Code
+            </button>
+
+            <button onclick="autoFixCode()" class="autofix-btn">
+                🛠️ AI Auto-Fix
+            </button>
+
+
+            <button
+                class="clear-btn"
+                onclick="clearCode()"
+            >
+                🗑 Clear
+            </button>
+
+
+            <button
+                class="download-btn"
+                id="downloadBtn"
+                onclick="downloadReport()"
+                style="display:none;"
+            >
+                📥 Download Report
+            </button>
+
+        </div>
+
+
+        <div id="loading">
+
+            <span class="loader"></span>
+
+            Four specialized AI agents are analyzing your code...
+
+        </div>
+
+
+        <div id="error"></div>
+
+    </section>
+
+
+    <!-- =====================================================
+         RESULTS
+    ====================================================== -->
+
+    <section id="results">
+
+
+        <!-- SCORE CARDS -->
+
+        <div class="stats-grid">
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    CODE HEALTH SCORE
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="score"
+                >
+                    0/100
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    RISK LEVEL
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="risk"
+                >
+                    -
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-label">
+                    TOTAL FINDINGS
+                </div>
+
+                <div
+                    class="stat-value"
+                    id="totalFindings"
+                >
+                    0
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             SPECIALIZED AGENTS
+        ================================================== -->
+
+        <div class="agent-grid">
+
+
+            <div
+                class="agent-card"
+                onclick="filterFindings('bug')"
+            >
+
+                <div class="agent-icon">
+                    🐞
+                </div>
+
+                <h3>
+                    Bug Detection
+                </h3>
+
+                <div
+                    class="agent-count"
+                    id="bugCount"
+                >
+                    0
+                </div>
+
+                <p>
+                    Runtime and logic errors
+                </p>
+
+            </div>
+
+
+            <div
+                class="agent-card"
+                onclick="filterFindings('security')"
+            >
+
+                <div class="agent-icon">
+                    🔐
+                </div>
+
+                <h3>
+                    Security
+                </h3>
+
+                <div
+                    class="agent-count"
+                    id="securityCount"
+                >
+                    0
+                </div>
+
+                <p>
+                    Security vulnerabilities
+                </p>
+
+            </div>
+
+
+            <div
+                class="agent-card"
+                onclick="filterFindings('performance')"
+            >
+
+                <div class="agent-icon">
+                    ⚡
+                </div>
+
+                <h3>
+                    Performance
+                </h3>
+
+                <div
+                    class="agent-count"
+                    id="performanceCount"
+                >
+                    0
+                </div>
+
+                <p>
+                    Efficiency problems
+                </p>
+
+            </div>
+
+
+            <div
+                class="agent-card"
+                onclick="filterFindings('quality')"
+            >
+
+                <div class="agent-icon">
+                    🧹
+                </div>
+
+                <h3>
+                    Code Quality
+                </h3>
+
+                <div
+                    class="agent-count"
+                    id="qualityCount"
+                >
+                    0
+                </div>
+
+                <p>
+                    Maintainability issues
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             FINDINGS
+        ================================================== -->
+
+        <div class="results-card">
+
+            <div class="results-header">
+
+                <h2>
+                    🧠 AI Findings
+                </h2>
+
+
+                <div class="filter-buttons">
+
+                    <button
+                        class="filter-btn active"
+                        onclick="filterFindings('all')"
+                        id="filterAll"
+                    >
+                        All
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        onclick="filterFindings('bug')"
+                    >
+                        🐞 Bugs
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        onclick="filterFindings('security')"
+                    >
+                        🔐 Security
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        onclick="filterFindings('performance')"
+                    >
+                        ⚡ Performance
+                    </button>
+
+                    <button
+                        class="filter-btn"
+                        onclick="filterFindings('quality')"
+                    >
+                        🧹 Quality
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div id="findings-container">
+
+                <div class="empty">
+
+                    Analyze code to see AI findings.
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             AGENT SUMMARIES
+        ================================================== -->
+
+        <div class="results-card">
+
+            <div class="results-header">
+
+                <h2>
+                    🤖 Agent Analysis Summaries
+                </h2>
+
+            </div>
+
+
+            <div
+                class="summary-grid"
+                id="summaries"
+            >
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+<footer>
+
+    AI Code Review Agent • Multi-Agent Architecture •
+    LangGraph + Gemini
+
+</footer>
+
+
+
+<script>
+
+
+/* =========================================================
+   GLOBAL DATA
+========================================================= */
+
+let latestReport = null;
+
+let currentFilter = "all";
+
+
+/* =========================================================
+   ANALYZE CODE
+========================================================= */
+
+async function analyzeCode() {
+
+
+    const code =
+        document.getElementById("code").value.trim();
+
+
+    const language =
+        document.getElementById("language").value;
+
+
+    const analyzeButton =
+        document.getElementById("analyzeBtn");
+
+
+    const loading =
+        document.getElementById("loading");
+
+
+    const errorBox =
+        document.getElementById("error");
+
+
+    const results =
+        document.getElementById("results");
+
+
+    if (!code) {
+
+        showError(
+            "Please paste some source code before starting the analysis."
+        );
+
+        return;
+    }
+
+
+    /* Reset UI */
+
+    errorBox.style.display = "none";
+
+    results.style.display = "none";
+
+    loading.style.display = "block";
+
+    analyzeButton.disabled = true;
+
+    analyzeButton.innerText =
+        "⏳ Analyzing...";
+
+
+    try {
+
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/review",
+            {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    code: code,
+
+                    language: language
+
+                })
+
+            }
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Server returned HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        latestReport = data;
+
+
+        displayResults(data);
+
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        showError(
+            "Unable to analyze the code. Make sure the FastAPI server is running at http://127.0.0.1:8000"
+        );
+
+    }
+
+    finally {
+
+        loading.style.display = "none";
+
+        analyzeButton.disabled = false;
+
+        analyzeButton.innerText =
+            "🔍 Analyze Code";
+
+    }
+
+}
+
+
+/* =========================================================
+   DISPLAY RESULTS
+========================================================= */
+
+function displayResults(data) {
+
+
+    const results =
+        document.getElementById("results");
+
+
+    results.style.display = "block";
+
+
+    /* -----------------------------------------------------
+       Score
+    ----------------------------------------------------- */
+
+    const score =
+        Number(data.score || 0);
+
+
+    const scoreElement =
+        document.getElementById("score");
+
+
+    scoreElement.innerText =
+        score + "/100";
+
+
+    scoreElement.className =
+        "stat-value " +
+        getScoreClass(score);
+
+
+    /* -----------------------------------------------------
+       Risk
+    ----------------------------------------------------- */
+
+    const risk =
+        data.risk_level || "UNKNOWN";
+
+
+    const riskElement =
+        document.getElementById("risk");
+
+
+    riskElement.innerText =
+        risk;
+
+
+    riskElement.className =
+        "stat-value";
+
+
+    /* -----------------------------------------------------
+       Total findings
+    ----------------------------------------------------- */
+
+    document.getElementById(
+        "totalFindings"
+    ).innerText =
+        data.total_findings || 0;
+
+
+    /* -----------------------------------------------------
+       Agent counts
+    ----------------------------------------------------- */
+
+    document.getElementById(
+        "bugCount"
+    ).innerText =
+        (data.bugs || []).length;
+
+
+    document.getElementById(
+        "securityCount"
+    ).innerText =
+        (data.security_vulnerabilities || []).length;
+
+
+    document.getElementById(
+        "performanceCount"
+    ).innerText =
+        (data.performance_issues || []).length;
+
+
+    document.getElementById(
+        "qualityCount"
+    ).innerText =
+        (data.quality_issues || []).length;
+
+
+    /* -----------------------------------------------------
+       Findings
+    ----------------------------------------------------- */
+
+    renderFindings(
+        data.findings || []
+    );
+
+
+    /* -----------------------------------------------------
+       Agent summaries
+    ----------------------------------------------------- */
+
+    renderSummaries(
+        data.agent_summaries || {}
+    );
+
+
+    /* -----------------------------------------------------
+       Download button
+    ----------------------------------------------------- */
+
+    document.getElementById(
+        "downloadBtn"
+    ).style.display = "inline-block";
+
+
+    /* -----------------------------------------------------
+       Scroll to results
+    ----------------------------------------------------- */
+
+    results.scrollIntoView({
+        behavior: "smooth"
+    });
+
+}
+
+
+/* =========================================================
+   SCORE CLASS
+========================================================= */
+
+function getScoreClass(score) {
+
+    if (score >= 80) {
+        return "score-good";
+    }
+
+    if (score >= 50) {
+        return "score-medium";
+    }
+
+    return "score-danger";
+
+}
+
+
+/* =========================================================
+   RENDER FINDINGS
+========================================================= */
+
+function renderFindings(findings) {
+
+
+    const container =
+        document.getElementById(
+            "findings-container"
+        );
+
+
+    let filteredFindings =
+        findings;
+
+
+    if (currentFilter !== "all") {
+
+        filteredFindings =
+            findings.filter(
+                finding => {
+
+                    const category =
+                        getCategory(
+                            finding
+                        );
+
+                    return category ===
+                        currentFilter;
+
+                }
+            );
+
+    }
+
+
+    if (!filteredFindings.length) {
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                🎉 No findings in this category.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        filteredFindings.map(
+            (finding, index) => {
+
+
+                const severity =
+                    String(
+                        finding.severity ||
+                        "INFO"
+                    ).toLowerCase();
+
+
+                const category =
+                    getCategory(
+                        finding
+                    );
+
+
+                return `
+
+                    <div
+                        class="finding"
+                        data-category="${category}"
+                    >
+
+                        <div class="finding-top">
+
+                            <div>
+
+                                <div
+                                    class="finding-title"
+                                >
+                                    ${escapeHtml(
+                                        finding.title ||
+                                        "AI Finding"
+                                    )}
+                                </div>
+
+                            </div>
+
+
+                            <div class="badges">
+
+                                <span
+                                    class="badge ${severity}"
+                                >
+                                    ${escapeHtml(
+                                        String(
+                                            finding.severity ||
+                                            "INFO"
+                                        ).toUpperCase()
+                                    )}
+                                </span>
+
+
+                                <span
+                                    class="badge"
+                                    style="
+                                        background:#e2e8f0;
+                                        color:#475569;
+                                    "
+                                >
+                                    ${category.toUpperCase()}
+                                </span>
+
+
+                                ${
+                                    finding.line
+                                    ? `
+                                    <span
+                                        class="badge"
+                                        style="
+                                            background:#e0f2fe;
+                                            color:#075985;
+                                        "
+                                    >
+                                        Line ${escapeHtml(
+                                            String(
+                                                finding.line
+                                            )
+                                        )}
+                                    </span>
+                                    `
+                                    : ""
+                                }
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="finding-description"
+                        >
+                            ${
+                                escapeHtml(
+                                    finding.description ||
+                                    "No description provided."
+                                )
+                            }
+                        </div>
+
+
+                        ${
+                            finding.recommendation
+                            ? `
+                            <div
+                                class="recommendation"
+                            >
+                                💡 <strong>
+                                    Recommendation:
+                                </strong>
+
+                                ${escapeHtml(
+                                    finding.recommendation
+                                )}
+                            </div>
+                            `
+                            : ""
+                        }
+
+                    </div>
+
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+/* =========================================================
+   GET CATEGORY
+========================================================= */
+
+function getCategory(finding) {
+
+
+    const category =
+        String(
+            finding.category || ""
+        ).toLowerCase();
+
+
+    if (
+        category.includes("security") ||
+        category.includes("vulnerability")
+    ) {
+        return "security";
+    }
+
+
+    if (
+        category.includes("performance")
+    ) {
+        return "performance";
+    }
+
+
+    if (
+        category.includes("quality")
+    ) {
+        return "quality";
+    }
+
+
+    if (
+        category.includes("bug") ||
+        category.includes("error") ||
+        category.includes("runtime")
+    ) {
+        return "bug";
+    }
+
+
+    /*
+       Some agents may not return a category.
+       Try to infer it from the title.
+    */
+
+    const title =
+        String(
+            finding.title || ""
+        ).toLowerCase();
+
+
+    if (
+        title.includes("sql") ||
+        title.includes("password") ||
+        title.includes("credential") ||
+        title.includes("injection") ||
+        title.includes("command")
+    ) {
+        return "security";
+    }
+
+
+    if (
+        title.includes("performance") ||
+        title.includes("complexity") ||
+        title.includes("concatenation")
+    ) {
+        return "performance";
+    }
+
+
+    if (
+        title.includes("variable") ||
+        title.includes("duplicate") ||
+        title.includes("magic") ||
+        title.includes("naming") ||
+        title.includes("quality")
+    ) {
+        return "quality";
+    }
+
+
+    return "bug";
+
+}
+
+
+/* =========================================================
+   FILTER FINDINGS
+========================================================= */
+
+function filterFindings(category) {
+
+
+    currentFilter =
+        category;
+
+
+    const buttons =
+        document.querySelectorAll(
+            ".filter-btn"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            button.classList.remove(
+                "active"
+            );
+
+        }
+    );
+
+
+    if (category === "all") {
+
+        document.getElementById(
+            "filterAll"
+        ).classList.add(
+            "active"
+        );
+
+    }
+
+
+    if (latestReport) {
+
+        renderFindings(
+            latestReport.findings || []
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RENDER SUMMARIES
+========================================================= */
+
+function renderSummaries(summaries) {
+
+
+    const container =
+        document.getElementById(
+            "summaries"
+        );
+
+
+    const agents = [
+
+        {
+            key: "bug_agent",
+            icon: "🐞",
+            name: "Bug Detection Agent"
+        },
+
+        {
+            key: "security_agent",
+            icon: "🔐",
+            name: "Security Agent"
+        },
+
+        {
+            key: "performance_agent",
+            icon: "⚡",
+            name: "Performance Agent"
+        },
+
+        {
+            key: "quality_agent",
+            icon: "🧹",
+            name: "Code Quality Agent"
+        }
+
+    ];
+
+
+    container.innerHTML =
+        agents.map(
+            agent => `
+
+                <div class="summary-card">
+
+                    <h3>
+                        ${agent.icon}
+                        ${agent.name}
+                    </h3>
+
+                    <p>
+                        ${escapeHtml(
+                            summaries[
+                                agent.key
+                            ] ||
+                            "No summary available."
+                        )}
+                    </p>
+
+                </div>
+
+            `
+        ).join("");
+
+}
+
+
+/* =========================================================
+   CLEAR CODE
+========================================================= */
+
+function clearCode() {
+
+
+    document.getElementById(
+        "code"
+    ).value = "";
+
+
+    document.getElementById(
+        "results"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "error"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "downloadBtn"
+    ).style.display = "none";
+
+
+    latestReport = null;
+
+
+    currentFilter = "all";
+
+}
+
+
+/* =========================================================
+   ERROR MESSAGE
+========================================================= */
+
+function showError(message) {
+
+
+    const errorBox =
+        document.getElementById(
+            "error"
+        );
+
+
+    errorBox.innerText =
+        "⚠ " + message;
+
+
+    errorBox.style.display =
+        "block";
+
+}
+
+
+/* =========================================================
+   DOWNLOAD REPORT
+========================================================= */
+
+function downloadReport() {
+
+
+    if (!latestReport) {
+
+        return;
+
+    }
+
+
+    const reportText =
+
+`
+==================================================
+          AI CODE REVIEW REPORT
+==================================================
+
+Language:
+${latestReport.language}
+
+Code Health Score:
+${latestReport.score}/100
+
+Risk Level:
+${latestReport.risk_level}
+
+Total Findings:
+${latestReport.total_findings}
+
+
+==================================================
+                 FINDINGS
+==================================================
+
+${
+    (latestReport.findings || [])
+        .map(
+            (finding, index) => `
+
+${index + 1}. ${finding.title}
+
+Severity:
+${finding.severity}
+
+Category:
+${finding.category || "General"}
+
+Line:
+${finding.line || "N/A"}
+
+Description:
+${finding.description || "N/A"}
+
+Recommendation:
+${finding.recommendation || "N/A"}
+
+-----------------------------------------------
+`
+        )
+        .join("")
+}
+
+
+==================================================
+             AGENT SUMMARIES
+==================================================
+
+${
+    Object.entries(
+        latestReport.agent_summaries || {}
+    )
+    .map(
+        ([agent, summary]) => `
+
+${agent.toUpperCase()}:
+
+${summary}
+
+`
+    )
+    .join("")
+}
+
+==================================================
+Generated by AI Code Review Agent
+Multi-Agent LangGraph + Gemini
+==================================================
+`;
+
+
+    const blob =
+        new Blob(
+            [reportText],
+            {
+                type:
+                    "text/plain"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href = url;
+
+    link.download =
+        "AI_Code_Review_Report.txt";
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    document.body.removeChild(
+        link
+    );
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+/* =========================================================
+   HTML ESCAPE
+========================================================= */
+
+function escapeHtml(value) {
+
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+async function autoFixCode() {
+
+    const code = document.getElementById("code").value.trim();
+    const language = document.getElementById("language").value;
+
+    if (!code) {
+        alert("Please paste some source code before using AI Auto-Fix.");
+        return;
+    }
+
+
+    // Remove previous Before vs After section
+const oldComparison =
+    document.getElementById("before-after-comparison");
+
+if (oldComparison) {
+    oldComparison.remove();
+}
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/autofix",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    code: code,
+                    language: language
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                "Server returned HTTP " + response.status
+            );
+        }
+
+        const result = await response.json();
+
+        console.log("AI Auto-Fix Result:", result);
+
+        // Remove previous auto-fix result
+        const oldResult =
+            document.getElementById("autofix-result");
+
+        if (oldResult) {
+            oldResult.remove();
+        }
+
+        // Create Auto-Fix result section
+        const resultSection =
+            document.createElement("section");
+
+        resultSection.id = "autofix-result";
+
+        resultSection.style.cssText = `
+            margin-top: 25px;
+            background: white;
+            border: 1px solid #e5eaf2;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(15,23,42,0.07);
+        `;
+
+        resultSection.innerHTML = `
+
+            <h2 style="
+                margin-bottom: 20px;
+                color: #172033;
+            ">
+                🛠️ AI Auto-Fix Result
+            </h2>
+
+            <h3 style="
+                margin-bottom: 8px;
+                color: #2563eb;
+            ">
+                💡 Explanation
+            </h3>
+
+            <p style="
+                color: #475569;
+                line-height: 1.7;
+                margin-bottom: 20px;
+            ">
+                ${escapeHtml(
+                    result.explanation ||
+                    "No explanation provided."
+                )}
+            </p>
+
+            <h3 style="
+                margin-bottom: 8px;
+                color: #2563eb;
+            ">
+                🔄 Changes Made
+            </h3>
+
+            <p style="
+                color: #475569;
+                line-height: 1.7;
+                margin-bottom: 20px;
+            ">
+                ${escapeHtml(
+                    result.changes ||
+                    "No changes information provided."
+                )}
+            </p>
+
+            <h3 style="
+                margin-bottom: 8px;
+                color: #2563eb;
+            ">
+                ✅ Fixed Code
+            </h3>
+
+            <pre style="
+                background: #0f172a;
+                color: #e2e8f0;
+                padding: 18px;
+                border-radius: 12px;
+                overflow-x: auto;
+                line-height: 1.6;
+                font-family: Consolas, monospace;
+                font-size: 14px;
+                white-space: pre-wrap;
+            ">${escapeHtml(
+                result.fixed_code ||
+                "No fixed code returned."
+            )}</pre>
+
+            <button
+                onclick="applyFixedCode()"
+                style="
+                    margin-top: 18px;
+                    background: #2563eb;
+                    color: white;
+                    border: none;
+                    padding: 13px 20px;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    cursor: pointer;
+                "
+            >
+                ✅ Apply Fixed Code
+            </button>
+        `;
+
+        document
+            .querySelector("main")
+            .appendChild(resultSection);
+
+
+        // ============================================================
+// BEFORE vs AFTER CODE COMPARISON
+// ============================================================
+
+const comparisonSection =
+    document.createElement("section");
+
+comparisonSection.id = "before-after-comparison";
+
+comparisonSection.style.cssText = `
+    margin-top: 25px;
+    background: white;
+    border: 1px solid #e5eaf2;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 8px 30px rgba(15,23,42,0.07);
+`;
+
+comparisonSection.innerHTML = `
+
+    <h2 style="
+        margin-bottom: 20px;
+        color: #172033;
+    ">
+        🔄 Before vs After
+    </h2>
+
+    <div style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    ">
+
+        <!-- BEFORE CODE -->
+
+        <div>
+
+            <h3 style="
+                color: #dc2626;
+                margin-bottom: 10px;
+            ">
+                ❌ Before Fix
+            </h3>
+
+            <pre style="
+                background: #0f172a;
+                color: #f8fafc;
+                padding: 18px;
+                border-radius: 12px;
+                overflow-x: auto;
+                line-height: 1.6;
+                font-family: Consolas, monospace;
+                font-size: 14px;
+                white-space: pre-wrap;
+            ">${escapeHtml(
+                window.originalCodeBeforeFix || code
+            )}</pre>
+
+        </div>
+
+
+        <!-- AFTER CODE -->
+
+        <div>
+
+            <h3 style="
+                color: #16a34a;
+                margin-bottom: 10px;
+            ">
+                ✅ After AI Fix
+            </h3>
+
+            <pre style="
+                background: #0f172a;
+                color: #f8fafc;
+                padding: 18px;
+                border-radius: 12px;
+                overflow-x: auto;
+                line-height: 1.6;
+                font-family: Consolas, monospace;
+                font-size: 14px;
+                white-space: pre-wrap;
+            ">${escapeHtml(
+                window.latestFixedCode ||
+                result.fixed_code ||
+                "No fixed code available."
+            )}</pre>
+
+        </div>
+
+    </div>
+
+    <div style="
+        margin-top: 20px;
+        padding: 15px 18px;
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        border-radius: 8px;
+        color: #1e40af;
+        line-height: 1.6;
+    ">
+        💡 <strong>AI Remediation:</strong>
+        The left side shows the original code submitted for review.
+        The right side shows the corrected version generated by the AI Auto-Fix agent.
+    </div>
+`;
+
+document
+    .querySelector("main")
+    .appendChild(comparisonSection);
+
+
+        // Store the original code for Before/After comparison
+window.originalCodeBeforeFix = code;
+window.latestFixedCode = result.fixed_code || "";
+
+         
+
+        // Scroll to Auto-Fix result
+        resultSection.scrollIntoView({
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "❌ Auto-Fix failed. Make sure the FastAPI server is running."
+        );
+    }
+}
+
+
+// Apply the AI-generated fixed code
+function applyFixedCode() {
+
+    if (!window.latestFixedCode) {
+        alert("No fixed code is available.");
+        return;
+    }
+
+    document.getElementById("code").value =
+        window.latestFixedCode;
+
+    alert("✅ Fixed code has been placed in the editor.");
+
+    document.getElementById("code").scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+</script>
+
+
+</body>
+
+</html>
